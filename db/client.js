@@ -280,14 +280,16 @@ const defaultDbUrl = process.env.DATABASE_URL ||
   process.env.COCKROACH_DATABASE_URL || 
   Buffer.from('cG9zdGdyZXNxbDovL2FtYW46S2xoZ19rNVRrV1d4WVpqbnRwOEhvUUBzYWdlLW1hbmF0ZWUtMTk2MDgualhmLmdjcC1hc2lhLXNvdXRoMS5jb2Nrcm9hY2hsYWJzLmNsb3VkOjI2MjU3L2RlZmF1bHRkYj9zc2xtb2RlPXZlcmlmeS1mdWxs', 'base64').toString('ascii');
 
-if (defaultDbUrl) {
+let cleanDbUrl = defaultDbUrl ? defaultDbUrl.replace(/[?&]sslmode=[^&]+/, '') : null;
+
+if (cleanDbUrl) {
   try {
     const certPath = process.env.APPDATA ? path.join(process.env.APPDATA, 'postgresql', 'root.crt') : null;
     const rootCert = (certPath && fs.existsSync(certPath)) ? fs.readFileSync(certPath).toString() : null;
 
     pgPool = new Pool({
-      connectionString: defaultDbUrl,
-      ssl: rootCert ? { ca: rootCert, rejectUnauthorized: true } : { rejectUnauthorized: false }
+      connectionString: cleanDbUrl,
+      ssl: rootCert ? { ca: rootCert } : { rejectUnauthorized: false }
     });
     console.log('[CockroachDB] Configured live connection pool to CockroachDB Cloud cluster.');
   } catch (err) {
