@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChronoMesh — Distributed Multi-Agent Memory & State OS (CockroachDB × AWS)</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header / Nav -->
+    <header class="header">
+      <div class="brand">
+        <div class="logo-icon">🪳</div>
+        <div class="brand-text">
+          <h1>ChronoMesh <span class="badge-tag">OS v1.0</span></h1>
+          <p class="subtitle">Distributed Multi-Agent State & Memory OS • CockroachDB × AWS</p>
+        </div>
+      </div>
+
+      <div class="system-status-pills">
+        <div class="status-pill active" title="CockroachDB Distributed Serializable Cluster">
+          <span class="dot"></span>
+          <span class="pill-title">CockroachDB:</span>
+          <span id="crdb-status" class="pill-val">Multi-Region (3)</span>
+        </div>
+        <div class="status-pill active" title="Amazon Bedrock Claude 3.5 & Titan Embeddings">
+          <span class="dot aws"></span>
+          <span class="pill-title">AWS Bedrock:</span>
+          <span class="pill-val">Titan 1536-dim</span>
+        </div>
+        <div class="status-pill active" title="Managed MCP Server">
+          <span class="dot mcp"></span>
+          <span class="pill-title">MCP Server:</span>
+          <span class="pill-val">Online</span>
+        </div>
+        <div class="status-pill active" title="ccloud CLI Agent">
+          <span class="dot ccloud"></span>
+          <span class="pill-title">ccloud CLI:</span>
+          <span class="pill-val">Active</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="tab-btn active" data-tab="swarm">
+        <span class="tab-icon">🌐</span> Swarm Topology & Leases
+      </button>
+      <button class="tab-btn" data-tab="timetravel">
+        <span class="tab-icon">⏳</span> Time-Travel Replay (AS OF SYSTEM TIME)
+      </button>
+      <button class="tab-btn" data-tab="vectors">
+        <span class="tab-icon">🧬</span> Distributed Vector Memory
+      </button>
+      <button class="tab-btn" data-tab="chaos">
+        <span class="tab-icon">💥</span> Chaos & Zero-Loss Failover
+      </button>
+      <button class="tab-btn" data-tab="telemetry">
+        <span class="tab-icon">📊</span> CockroachDB Skills & Audit
+      </button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+      <!-- TAB 1: SWARM TOPOLOGY & WORKING LEASES -->
+      <section id="tab-swarm" class="tab-pane active">
+        <div class="pane-grid-2col">
+          <!-- Left: Swarm Visualizer -->
+          <div class="card card-swarm-vis">
+            <div class="card-header">
+              <div>
+                <h3>Live Multi-Agent Mesh & Consensus</h3>
+                <p class="card-desc">Click any agent node on the canvas to inspect its live working memory.</p>
+              </div>
+              <div class="card-actions flex-gap">
+                <select id="scenario-selector" class="select-box">
+                  <option value="incident">⚡ Scenario 1: Multi-Region Outage & Deadlock</option>
+                  <option value="financial">💰 Scenario 2: Cross-Border Settlement Audit</option>
+                  <option value="chaos">💥 Scenario 3: Chaos Container Death & Recovery</option>
+                </select>
+                <button id="btn-run-scenario" class="btn btn-primary">
+                  <span class="btn-icon">▶</span> Launch Swarm Scenario
+                </button>
+              </div>
+            </div>
+            <div class="canvas-container">
+              <canvas id="swarm-canvas" width="600" height="340"></canvas>
+            </div>
+            <div class="swarm-metrics-bar">
+              <div class="metric-item">
+                <span class="metric-label">Active Agents:</span>
+                <span id="metric-agents" class="metric-val">4</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">Distributed Locks:</span>
+                <span id="metric-locks" class="metric-val">0</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">Isolation Level:</span>
+                <span class="metric-val text-accent">SERIALIZABLE (SSI)</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">Consensus Latency:</span>
+                <span class="metric-val text-green">&lt; 2.4ms</span>
+              </div>
+            </div>
+
+            <!-- Agent Details Drawer (Populated when clicking canvas node) -->
+            <div id="agent-drawer" class="agent-details-drawer" style="display: none;">
+              <div class="drawer-header">
+                <h4 id="drawer-agent-name">Agent Inspector</h4>
+                <button id="btn-close-drawer" class="btn-close">✕</button>
+              </div>
+              <div class="drawer-body">
+                <div class="drawer-meta">
+                  <span>Role: <strong id="drawer-agent-role">-</strong></span>
+                  <span>Region: <strong id="drawer-agent-region">-</strong></span>
+                  <span>Status: <strong id="drawer-agent-status" class="text-green">-</strong></span>
+                </div>
+                <div class="mt-2">
+                  <span class="metric-label">Active Working Memory & Locks:</span>
+                  <div id="drawer-agent-leases" class="code-view mt-1" style="max-height: 100px;">None held</div>
+                </div>
+                <div class="mt-2">
+                  <span class="metric-label">Latest Bedrock Reasoning Frame:</span>
+                  <div id="drawer-agent-reasoning" class="code-view mt-1" style="max-height: 100px;">Idle</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Distributed Leases & Live Feed -->
+          <div class="card card-feed">
+            <div class="card-header">
+              <h3>Atomic Working Memory Leases</h3>
+              <span id="leases-count-badge" class="badge">0 Active</span>
+            </div>
+            <div id="leases-list" class="leases-list">
+              <div class="empty-state">No active mutex locks. System idle.</div>
+            </div>
+
+            <div class="card-header border-top">
+              <h3>Live Swarm Execution Stream</h3>
+              <span class="pulse-indicator">LIVE</span>
+            </div>
+            <div id="swarm-event-stream" class="event-stream">
+              <div class="stream-item info">
+                <span class="stream-time">SYSTEM</span>
+                <span class="stream-msg">ChronoMesh agent runtime initialized over CockroachDB distributed storage engine.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: TIME-TRAVEL REPLAY (AS OF SYSTEM TIME) -->
+      <section id="tab-timetravel" class="tab-pane">
+        <div class="card card-timetravel">
+          <div class="card-header">
+            <div>
+              <h3>Bi-Temporal Cognition Scrubber</h3>
+              <p class="card-desc">Execute historical queries using CockroachDB native <code>AS OF SYSTEM TIME</code> to reconstruct exact swarm memory states.</p>
+            </div>
+            <div class="scrubber-controls">
+              <button id="btn-scrub-now" class="btn btn-secondary btn-sm">Jump to Live (NOW)</button>
+            </div>
+          </div>
+
+          <!-- Interactive Scrubber Slider -->
+          <div class="scrubber-bar-container">
+            <div class="scrubber-labels">
+              <span id="timeline-start">Origin</span>
+              <span id="scrubber-current-label" class="scrubber-active-time">NOW (Live)</span>
+              <span id="timeline-end">NOW</span>
+            </div>
+            <input type="range" id="timeline-slider" min="0" max="100" value="100" class="timeline-slider">
+          </div>
+
+          <div class="timetravel-grid">
+            <div class="sub-card">
+              <h4>Reconstructed Cognitive Context</h4>
+              <div id="tt-cognitive-view" class="code-view">
+                <p class="text-muted">Drag the timeline scrubber to inspect historic agent reasoning at any timestamp.</p>
+              </div>
+            </div>
+
+            <div class="sub-card">
+              <h4>Historical Leases & Vector State</h4>
+              <div id="tt-meta-view" class="code-view">
+                <p class="text-muted">Historical state metadata will render here.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: DISTRIBUTED VECTOR MEMORY -->
+      <section id="tab-vectors" class="tab-pane">
+        <div class="card card-vectors">
+          <div class="card-header">
+            <div>
+              <h3>Distributed Vector Memory Explorer & Sovereign Locality</h3>
+              <p class="card-desc">CockroachDB <code>VECTOR(1536)</code> + <code>LOCALITY REGIONAL BY ROW</code> (GDPR compliant) + Neuroscience Sleep Consolidation.</p>
+            </div>
+            <div class="card-actions">
+              <button id="btn-compact-memory" class="btn btn-secondary btn-sm" title="Serverless Memory Compaction & Sleep Consolidation">
+                🧠 Run Sleep Consolidation Loop
+              </button>
+            </div>
+          </div>
+
+          <!-- Search Bar -->
+          <div class="vector-search-bar">
+            <input type="text" id="vector-search-input" placeholder="Enter semantic query (e.g. 'deadlock cascade on wallet update', 'cross-region latency spike')..." value="connection pool exhaustion and deadlock fix">
+            <select id="vector-domain-filter" class="select-box">
+              <option value="">All Domains</option>
+              <option value="INFRASTRUCTURE_INCIDENT">Infrastructure Incidents</option>
+              <option value="FINANCIAL_COMPLIANCE">Financial Compliance</option>
+              <option value="CHAOS_ENGINEERING">Chaos Engineering</option>
+              <option value="DATABASE_OPTIMIZATION">Database Optimization</option>
+              <option value="CONSOLIDATED_KNOWLEDGE">🧠 Consolidated Knowledge</option>
+            </select>
+            <button id="btn-search-vectors" class="btn btn-primary">
+              <span class="btn-icon">🔍</span> Search pgvector
+            </button>
+          </div>
+
+          <div class="vectors-results-grid" id="vector-results-container">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: CHAOS & SELF-HEALING RESILIENCE -->
+      <section id="tab-chaos" class="tab-pane">
+        <div class="pane-grid-2col">
+          <div class="card card-chaos-lab">
+            <div class="card-header">
+              <h3>Chaos Engineering & Node Killer</h3>
+              <p class="card-desc">Simulate abrupt AWS container termination to demonstrate zero-data-loss lease recovery.</p>
+            </div>
+
+            <div class="chaos-action-list">
+              <div class="chaos-item">
+                <div class="chaos-info">
+                  <strong>Kill SRE Forensics Agent (ECS Container Crash)</strong>
+                  <p>Terminates primary SRE agent during live incident triage to test standby takeover.</p>
+                </div>
+                <button class="btn btn-danger btn-sm btn-chaos-kill" data-agent="AGENT_SRE_FORENSICS">
+                  💥 Kill Agent
+                </button>
+              </div>
+
+              <div class="chaos-item">
+                <div class="chaos-info">
+                  <strong>Kill Swarm Orchestrator (SIGKILL)</strong>
+                  <p>Forces orphan lease reclamation and task state checkpoint reload.</p>
+                </div>
+                <button class="btn btn-danger btn-sm btn-chaos-kill" data-agent="AGENT_ORCHESTRATOR">
+                  💥 Kill Master
+                </button>
+              </div>
+
+              <div class="chaos-item">
+                <div class="chaos-info">
+                  <strong>Simulate US-East-1 Network Partition</strong>
+                  <p>Tests CockroachDB Raft range leaseholder migration to EU-Central-1.</p>
+                </div>
+                <button id="btn-sim-partition" class="btn btn-warning btn-sm">
+                  ⚡ Partition Network
+                </button>
+              </div>
+
+              <div class="chaos-item">
+                <div class="chaos-info">
+                  <strong>Revive All Terminated Agents</strong>
+                  <p>Restores crashed worker containers back to active swarm pool.</p>
+                </div>
+                <button id="btn-revive-all" class="btn btn-secondary btn-sm">
+                  🔄 Revive Swarm
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card card-failover-log">
+            <div class="card-header">
+              <h3>Autonomous Failover & Recovery Ledger</h3>
+              <span class="badge badge-success">Self-Healing Active</span>
+            </div>
+            <div id="chaos-failover-feed" class="failover-feed">
+              <div class="empty-state">No chaos injected yet. Click a chaos button on the left to test live resilience.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: COCKROACHDB SKILLS & TELEMETRY -->
+      <section id="tab-telemetry" class="tab-pane">
+        <div class="pane-grid-2col">
+          <!-- Skills & Fingerprints -->
+          <div class="card">
+            <div class="card-header">
+              <h3>CockroachDB Agent Skills Diagnostics</h3>
+              <span class="badge">cockroachlabs/cockroachdb-skills</span>
+            </div>
+            <div class="telemetry-section">
+              <h4>Statement Fingerprint Latencies</h4>
+              <div id="fingerprints-list" class="table-container">
+                <!-- Populated via JS -->
+              </div>
+
+              <h4 class="mt-4">Schema Anti-Pattern Evaluation</h4>
+              <div id="schema-rules-list" class="rules-list">
+                <!-- Populated via JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- ccloud & Audit Ledger & MCP Playground -->
+          <div class="card">
+            <div class="card-header">
+              <h3>CockroachDB Managed MCP Playground</h3>
+              <span class="badge">Endpoint: /mcp</span>
+            </div>
+            
+            <div class="mcp-playground-box">
+              <div class="vector-search-bar">
+                <select id="mcp-tool-select" class="select-box">
+                  <option value="inspect_swarm_state">inspect_swarm_state</option>
+                  <option value="query_episodic_vectors">query_episodic_vectors</option>
+                  <option value="replay_memory_time_travel">replay_memory_time_travel</option>
+                  <option value="inject_chaos_failure">inject_chaos_failure</option>
+                </select>
+                <button id="btn-exec-mcp" class="btn btn-primary btn-sm">
+                  ⚡ Call Tool via MCP
+                </button>
+              </div>
+              <div id="mcp-result-view" class="code-view" style="max-height: 140px;">
+                Select an MCP tool above and click 'Call Tool via MCP' to execute live protocol call.
+              </div>
+            </div>
+
+            <div class="card-header border-top">
+              <h3>ccloud CLI & Merkle Audit Trail</h3>
+              <button id="btn-ccloud-backup" class="btn btn-secondary btn-sm">
+                📸 Trigger ccloud Point-in-Time Snapshot
+              </button>
+            </div>
+            <div id="audit-trail-container" class="audit-list">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div><strong>ChronoMesh</strong> — Built with CockroachDB (Vector + MCP + ccloud + Agent Skills) & AWS Bedrock.</div>
+      <div>Open Source (MIT License) • Built for CockroachDB × AWS Agentic Memory Hackathon</div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
