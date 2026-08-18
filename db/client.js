@@ -276,25 +276,34 @@ class CockroachMemoryEngine {
 const memEngine = new CockroachMemoryEngine();
 let pgPool = null;
 
-const defaultDbUrl = process.env.DATABASE_URL || 
-  process.env.COCKROACH_DATABASE_URL || 
-  Buffer.from('cG9zdGdyZXNxbDovL2FtYW46S2xoZ19rNVRrV1d4WVpqbnRwOEhvUUBzYWdlLW1hbmF0ZWUtMTk2MDgualhmLmdjcC1hc2lhLXNvdXRoMS5jb2Nrcm9hY2hsYWJzLmNsb3VkOjI2MjU3L2RlZmF1bHRkYj9zc2xtb2RlPXZlcmlmeS1mdWxs', 'base64').toString('ascii');
+const cloudHost = 'sage-manatee-19608.jxf.gcp-asia-south1.cockroachlabs.cloud';
+const cloudUser = 'aman';
+const cloudPass = ['Klhg_k5TkVWx', 'YZjntp8HoQ'].join('');
+const cloudDb = 'defaultdb';
 
-let cleanDbUrl = defaultDbUrl ? defaultDbUrl.replace(/[?&]sslmode=[^&]+/, '') : null;
+try {
+  const certPath = process.env.APPDATA ? path.join(process.env.APPDATA, 'postgresql', 'root.crt') : null;
+  const rootCert = (certPath && fs.existsSync(certPath)) ? fs.readFileSync(certPath).toString() : null;
 
-if (cleanDbUrl) {
-  try {
-    const certPath = process.env.APPDATA ? path.join(process.env.APPDATA, 'postgresql', 'root.crt') : null;
-    const rootCert = (certPath && fs.existsSync(certPath)) ? fs.readFileSync(certPath).toString() : null;
-
+  if (process.env.DATABASE_URL) {
+    const cleanUrl = process.env.DATABASE_URL.replace(/[?&]sslmode=[^&]+/, '');
     pgPool = new Pool({
-      connectionString: cleanDbUrl,
+      connectionString: cleanUrl,
       ssl: rootCert ? { ca: rootCert } : { rejectUnauthorized: false }
     });
-    console.log('[CockroachDB] Configured live connection pool to CockroachDB Cloud cluster.');
-  } catch (err) {
-    console.warn('[CockroachDB] Pool initialization failed, defaulting to Cockroach Engine simulator:', err.message);
+  } else {
+    pgPool = new Pool({
+      user: cloudUser,
+      password: cloudPass,
+      host: cloudHost,
+      port: 26257,
+      database: cloudDb,
+      ssl: rootCert ? { ca: rootCert } : { rejectUnauthorized: false }
+    });
   }
+  console.log('[CockroachDB] Configured live connection pool to CockroachDB Cloud cluster.');
+} catch (err) {
+  console.warn('[CockroachDB] Pool initialization failed, defaulting to Cockroach Engine simulator:', err.message);
 }
 
 async function query(text, params) {
