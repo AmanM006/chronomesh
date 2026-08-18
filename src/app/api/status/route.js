@@ -1,4 +1,8 @@
 import { NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const { engine, pool, isLive } = require('../../../../db/client');
 const swarm = require('../../../../runtime/agents');
 const leaseManager = require('../../../../runtime/leaseManager');
